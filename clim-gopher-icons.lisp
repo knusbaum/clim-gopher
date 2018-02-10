@@ -12,7 +12,6 @@
            (format (find-symbol type (find-package :keyword))))
       (handler-case
           (let ((pattern (make-pattern-from-bitmap-file dl-name :format format)))
-                                        ;            (transform-region (make-scaling-transformation 0.2 0.2) pattern))
             pattern)
         (clim-extensions:unsupported-bitmap-format (e) nil)))))
 

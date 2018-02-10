@@ -6,11 +6,11 @@
                                                        :description "gopher type"))
 
 (defun display-type (line stream)
-  (let ((icon (icon-for (cl-gopher::line-type line))))
+  (let ((icon (icon-for (line-type line))))
     (if icon
         (with-room-for-graphics ()
           (draw-design stream icon))
-        (format stream "~a" (string-downcase (cl-gopher::line-type line))))))
+        (format stream "~a" (string-downcase (line-type line))))))
 
 (define-presentation-type gopher-line () :inherit-from '((string)
                                                          :description "gopher line"))
@@ -19,10 +19,10 @@
                                              (view textual-view)
                                              &key acceptably)
   (declare (ignore acceptably))
-  (format stream "~a[gopher://~a:~a~a]"  (cl-gopher::display-string gopher-line)
-          (cl-gopher::hostname gopher-line)
-          (cl-gopher::port gopher-line)
-          (cl-gopher::selector gopher-line)))
+  (format stream "~a[gopher://~a:~a~a]"  (display-string gopher-line)
+          (hostname gopher-line)
+          (port gopher-line)
+          (selector gopher-line)))
 
 (define-presentation-method present (gopher-line (type gopher-line) stream
                                                  (view special-textual-view)
@@ -31,14 +31,14 @@
   (formatting-cell (stream :align-x :left)
     (display-type gopher-line stream))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (cl-gopher::display-string gopher-line)))
+    (format stream "~a" (display-string gopher-line)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
         (format stream "gopher://~a:~a~a"
-                (cl-gopher::hostname gopher-line)
-                (cl-gopher::port gopher-line)
-                (cl-gopher::selector gopher-line))))))
+                (hostname gopher-line)
+                (port gopher-line)
+                (selector gopher-line))))))
 
 (define-presentation-type search () :inherit-from '((string)
                                                     :description "search"))
@@ -47,10 +47,10 @@
                                             (view textual-view)
                                             &key acceptably)
   (declare (ignore acceptably))
-  (format stream "~a gopher://~a:~a~a" (cl-gopher::display-string search)
-          (cl-gopher::hostname search)
-          (cl-gopher::port search)
-          (cl-gopher::selector search)))
+  (format stream "~a gopher://~a:~a~a" (display-string search)
+          (hostname search)
+          (port search)
+          (selector search)))
 
 (define-presentation-method present (search (type search) stream
                                             (view special-textual-view)
@@ -59,15 +59,15 @@
   (formatting-cell (stream :align-x :left)
     (display-type search stream))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (cl-gopher::display-string search)))
+    (format stream "~a" (display-string search)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
         (format stream "gopher://~a:~a~a?~a"
-                (cl-gopher::hostname search)
-                (cl-gopher::port search)
-                (cl-gopher::selector search)
-                (cl-gopher::terms search))))))
+                (hostname search)
+                (port search)
+                (selector search)
+                (terms search))))))
 
 (define-presentation-type info () :inherit-from '((string)
                                                   :description "info"))
@@ -79,7 +79,7 @@
   (formatting-cell (stream :align-x :left)
     (format stream ""))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (cl-gopher::display-string info)))
+    (format stream "~a" (display-string info)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
@@ -95,17 +95,17 @@
   (formatting-cell (stream :align-x :left)
     (display-type html-file stream))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (cl-gopher::display-string html-file)))
+    (format stream "~a" (display-string html-file)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
-        (format stream "~a" (cl-gopher::selector html-file))))))
+        (format stream "~a" (selector html-file))))))
 
 (defun display-submenu (lines stream)
   (formatting-table (stream :x-spacing '(3 :character))
     (loop for line in lines
        do (formatting-row (stream)
-            (case (cl-gopher::line-type line)
+            (case (line-type line)
               (:info-message (present line 'info :stream stream))
               (:error-code   (present line 'info :stream stream))
               (:html-file    (present line 'html-file :stream stream
@@ -126,12 +126,12 @@
                                       :view (make-instance 'special-textual-view))))))))
 
 (defun display-image (image stream)
-  (let ((dl-name (format nil "/tmp/~a.~a" (pathname-name (cl-gopher::selector image))
-                         (pathname-type (cl-gopher::selector image)))))
-    (cl-gopher::download-file dl-name
-                              (cl-gopher::hostname image)
-                              (cl-gopher::port image)
-                              (cl-gopher::selector image))
+  (let ((dl-name (format nil "/tmp/~a.~a" (pathname-name (selector image))
+                         (pathname-type (selector image)))))
+    (download-file dl-name
+                              (hostname image)
+                              (port image)
+                              (selector image))
 
     (let* ((type (funcall (case (readtable-case *readtable*)
                             (:upcase #'string-upcase)
@@ -148,15 +148,16 @@
 
 (defun display-main (frame stream)
   (let ((current (car (history frame))))
-    (case (cl-gopher::line-type current)
-      (:submenu (let ((lines (cl-gopher::gopher-get-submenu current)))
+    (case (line-type current)
+      (:submenu (let ((lines (gopher-get-submenu current)))
                   (display-submenu lines stream)))
-      (:search (let ((lines (cl-gopher::gopher-do-search current)))
+      (:search (let ((lines (gopher-do-search current)))
                  (display-submenu lines stream)))
-      (:text-file (let ((lines (cl-gopher::text-file-get-lines current)))
+      (:text-file (let ((lines (text-file-get-lines current)))
                     (loop for line in lines
                        do (format stream "~a~%" line))))
       (:image (display-image current stream))
+      (:png (display-image current stream))
       (:gif (display-image current stream))))
 
   (format *error-output* "Ending Redisplay.~%"))
@@ -244,7 +245,7 @@
   (with-application-frame (frame)
     (setf (show-uri frame) (not (show-uri frame)))
     (perform-main-redisplay frame)))
-    
+
 (define-gopher-command (com-go-line :name t) ((gopher-line 'gopher-line))
   (with-application-frame (frame)
     (push gopher-line (history frame))
@@ -258,10 +259,10 @@
 
 (define-gopher-command (com-search :name t) ((search 'search))
   (with-application-frame (frame)
-    (let ((mod-search (cl-gopher::copy-gopher-line search))
+    (let ((mod-search (copy-gopher-line search))
           (search-terms (clim:accept 'string :prompt "search")))
       (when (not (equal search-terms ""))
-        (setf (cl-gopher::terms mod-search)
+        (setf (terms mod-search)
               search-terms))
       (push mod-search (history frame))
       (perform-main-redisplay frame))))
@@ -275,7 +276,7 @@
 (define-gopher-command (com-go-html :name t) ((html-file 'html-file))
   (with-application-frame (frame)
     (handler-case
-        (trivial-open-browser:open-browser (subseq (cl-gopher::selector html-file) 4))
+        (trivial-open-browser:open-browser (subseq (selector html-file) 4))
       (uiop:subprocess-error (e) nil))))
 
 (define-presentation-to-command-translator go-html
@@ -290,7 +291,7 @@
                  (quri:uri (format nil "gopher://~a" path)))))
     (with-application-frame (frame)
       (push
-       (make-instance 'cl-gopher::gopher-line
+       (make-instance 'gopher-line
                       :line-type :submenu
                       :display-string "???"
                       :selector (quri:uri-path uri)
@@ -302,7 +303,7 @@
 (defvar *app*)
 (defun browser ()
   (setf *app* (clim:make-application-frame 'clim-gopher::gopher))
-  (setf (history *app*) (list (make-instance 'cl-gopher::gopher-line
+  (setf (history *app*) (list (make-instance 'gopher-line
                                              :line-type :submenu
                                              :display-string "Home"
                                              :selector "/"

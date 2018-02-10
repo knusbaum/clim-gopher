@@ -7,7 +7,7 @@
    (bookmarks :initarg :bookmarks :initform nil :accessor bookmarks)))
 
 (defun read-bookmarks (fname)
-  (handler-case 
+  (handler-case
       (with-open-file (is fname)
         (let ((gopher-lines (read is)))
           (make-instance 'bookmarks
