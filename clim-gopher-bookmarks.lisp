@@ -1,5 +1,7 @@
 (in-package :clim-gopher)
 
+;;; None of this is totally functional or integrated yet.
+
 (defclass bookmarks ()
   ((fname :initarg :fname :accessor fname)
    (bookmarks :initarg :bookmarks :initform nil :accessor bookmarks)))
@@ -32,54 +34,5 @@
   (:command-definer define-bookmark-command)
   (:layouts
    (default (vertically ()
-              (1/10
-               (horizontally ()
-                 (make-button "Back" (lambda ()
-                                       (with-application-frame (frame)
-
-                                         (cond
-                                           ((display-image frame)
-                                            (setf (display-image frame) nil))
-
-                                           ((display-file frame)
-                                            (setf (display-file frame) nil))
-
-                                           (t
-                                            (let ((curr (pop (history frame)))
-                                                  (prev (car (history frame))))
-                                              (if prev
-                                                  (setf (curr-lines frame)
-                                                        (cl-gopher:gopher-get-directory
-                                                         (cl-gopher::hostname prev)
-                                                         (cl-gopher::port prev)
-                                                         (cl-gopher::selector prev)))
-                                                  (push curr (history frame))))))
-
-                                         (perform-main-redisplay frame))))
-                 (make-button "Refresh" (lambda ()
-                                          (with-application-frame (frame)
-                                            (let ((curr (car (history frame))))
-                                              (setf (curr-lines frame)
-                                                    (cl-gopher:gopher-get-directory
-                                                     (cl-gopher::hostname curr)
-                                                     (cl-gopher::port curr)
-                                                     (cl-gopher::selector curr)))
-                                              (perform-main-redisplay frame)))))
-                 (make-button "History" (lambda ()
-                                          (with-application-frame (frame)
-                                            (cond
-                                              ((display-image frame)
-                                               (setf (display-image frame) nil))
-                                              
-                                              ((display-file frame)
-                                               (setf (display-file frame) nil)))
-
-                                            (setf (curr-lines frame)
-                                                  (history frame))
-
-;                                            (push nil (history frame))
-                                            
-                                            (perform-main-redisplay frame))))))
-              (9/10 (vertically ()
-                      (99/100 main-display)
-                      (1/100 int)))))))
+              (99/100 main-display)
+              (1/100 int)))))
