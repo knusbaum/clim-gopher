@@ -16,8 +16,8 @@
                                                          :description "gopher line"))
 
 (define-presentation-method present (gopher-line (type gopher-line) stream
-                                             (view textual-view)
-                                             &key acceptably)
+                                                 (view textual-view)
+                                                 &key acceptably)
   (declare (ignore acceptably))
   (format stream "~a[gopher://~a:~a~a]"  (display-string gopher-line)
           (hostname gopher-line)
@@ -86,11 +86,11 @@
         (format stream "")))))
 
 (define-presentation-type html-file () :inherit-from '((string)
-                                                  :description "html-file"))
+                                                       :description "html-file"))
 
 (define-presentation-method present (html-file (type html-file) stream
-                                          (view special-textual-view)
-                                          &key acceptably)
+                                               (view special-textual-view)
+                                               &key acceptably)
   (declare (ignore acceptably))
   (formatting-cell (stream :align-x :left)
     (display-type html-file stream))
@@ -110,18 +110,8 @@
               (:error-code   (present line 'info :stream stream))
               (:html-file    (present line 'html-file :stream stream
                                       :view (make-instance 'special-textual-view)))
-;              (:html-file (formatting-cell (stream :align-x :left)
-;                            (format stream "~a" line)))
-;              (:submenu      (present line 'submenu :stream stream
-;                                      :view (make-instance 'special-textual-view)))
-;              (:text-file    (present line 'text-file :stream stream
-;                                      :view (make-instance 'special-textual-view)))
               (:search       (present line 'search :stream stream
                                       :view (make-instance 'special-textual-view)))
-;              (:image        (present line 'image :stream stream
-;                                      :view (make-instance 'special-textual-view)))
-;              (:gif          (present line 'image :stream stream
-;                                      :view (make-instance 'special-textual-view)))
               (t             (present line 'gopher-line :stream stream
                                       :view (make-instance 'special-textual-view))))))))
 
@@ -129,9 +119,9 @@
   (let ((dl-name (format nil "/tmp/~a.~a" (pathname-name (selector image))
                          (pathname-type (selector image)))))
     (download-file dl-name
-                              (hostname image)
-                              (port image)
-                              (selector image))
+                   (hostname image)
+                   (port image)
+                   (selector image))
 
     (let* ((type (funcall (case (readtable-case *readtable*)
                             (:upcase #'string-upcase)
@@ -253,8 +243,8 @@
 
 (define-presentation-to-command-translator go-line
     (gopher-line com-go-line gopher
-             :gesture :select		;command activated with left-click on a node
-             :menu t)              ;includes this command in right-click menu
+                 :gesture :select		;command activated with left-click on a node
+                 :menu t)              ;includes this command in right-click menu
     (object) (list object))
 
 (define-gopher-command (com-search :name t) ((search 'search))
