@@ -148,9 +148,7 @@
                        do (format stream "~a~%" line))))
       (:image (display-image current stream))
       (:png (display-image current stream))
-      (:gif (display-image current stream))))
-
-  (format *error-output* "Ending Redisplay.~%"))
+      (:gif (display-image current stream)))))
 
 (defun display-history (frame stream)
   (display-submenu (history frame) stream))
@@ -292,7 +290,9 @@
 
 (defvar *app*)
 (defun browser ()
-  (setf *app* (clim:make-application-frame 'clim-gopher::gopher))
+  (setf *app* (clim:make-application-frame 'clim-gopher::gopher
+                                           :width 1024
+                                           :height 768))
   (setf (history *app*) (list (make-instance 'gopher-line
                                              :line-type :submenu
                                              :display-string "Home"
