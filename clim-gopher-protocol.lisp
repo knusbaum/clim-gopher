@@ -47,12 +47,22 @@
      collect (marshall-gopher-line line)))
 
 (defun unmarshall-gopher-line (gl)
-  (make-instance 'gopher-line
-                 :line-type (cdr (assoc :line-type gl))
-                 :display-string (cdr (assoc :display-string gl))
-                 :selector (cdr (assoc :selector gl))
-                 :hostname (cdr (assoc :hostname gl))
-                 :port (cdr (assoc :port gl))))
+  (let ((line-type (cdr (assoc :line-type gl))))
+    (case line-type
+      (:search
+       (make-instance 'search-line
+                      :line-type (cdr (assoc :line-type gl))
+                      :display-string (cdr (assoc :display-string gl))
+                      :selector (cdr (assoc :selector gl))
+                      :hostname (cdr (assoc :hostname gl))
+                      :port (cdr (assoc :port gl))))
+      (t
+       (make-instance 'gopher-line
+                      :line-type (cdr (assoc :line-type gl))
+                      :display-string (cdr (assoc :display-string gl))
+                      :selector (cdr (assoc :selector gl))
+                      :hostname (cdr (assoc :hostname gl))
+                      :port (cdr (assoc :port gl)))))))
 
 (defun unmarshall-gopher-lines (gls)
   (loop for line in gls
@@ -77,7 +87,8 @@
     (#\T :telnet-3270)
     (#\h :html-file)
     (#\i :info-message)
-    (#\s :sound-file)))
+    (#\s :sound-file)
+    (t :unknown)))
 
 (defun str-elem (s n)
   (coerce (subseq s n (1+ n)) 'character))

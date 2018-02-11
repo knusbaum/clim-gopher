@@ -1,217 +1,150 @@
 (in-package :clim-gopher)
 
-(defclass special-textual-view (textual-view) ())
-
-(define-presentation-type line-type () :inherit-from '((string)
-                                                       :description "gopher type"))
-
-(defun display-type (line stream)
-  (let ((icon (icon-for (line-type line))))
-    (if icon
-        (with-room-for-graphics ()
-          (draw-design stream icon))
-        (format stream "~a" (string-downcase (line-type line))))))
-
-(define-presentation-type gopher-line () :inherit-from '((string)
-                                                         :description "gopher line"))
-
-(define-presentation-method present (gopher-line (type gopher-line) stream
-                                                 (view textual-view)
-                                                 &key acceptably)
-  (declare (ignore acceptably))
-  (format stream "~a[gopher://~a:~a~a]"  (display-string gopher-line)
-          (hostname gopher-line)
-          (port gopher-line)
-          (selector gopher-line)))
-
-(define-presentation-method present (gopher-line (type gopher-line) stream
-                                                 (view special-textual-view)
-                                                 &key acceptably)
-  (declare (ignore acceptably))
-  (formatting-cell (stream :align-x :left)
-    (display-type gopher-line stream))
-  (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string gopher-line)))
-  (with-application-frame (frame)
-    (when (show-uri frame)
-      (formatting-cell (stream :align-x :left)
-        (format stream "gopher://~a:~a~a"
-                (hostname gopher-line)
-                (port gopher-line)
-                (selector gopher-line))))))
-
-(define-presentation-type search () :inherit-from '((string)
-                                                    :description "search"))
-
-(define-presentation-method present (search (type search) stream
-                                            (view textual-view)
-                                            &key acceptably)
-  (declare (ignore acceptably))
-  (format stream "~a gopher://~a:~a~a" (display-string search)
-          (hostname search)
-          (port search)
-          (selector search)))
-
-(define-presentation-method present (search (type search) stream
-                                            (view special-textual-view)
-                                            &key acceptably)
-  (declare (ignore acceptably))
-  (formatting-cell (stream :align-x :left)
-    (display-type search stream))
-  (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string search)))
-  (with-application-frame (frame)
-    (when (show-uri frame)
-      (formatting-cell (stream :align-x :left)
-        (format stream "gopher://~a:~a~a?~a"
-                (hostname search)
-                (port search)
-                (selector search)
-                (terms search))))))
-
-(define-presentation-type info () :inherit-from '((string)
-                                                  :description "info"))
-
-(define-presentation-method present (info (type info) stream
-                                          (view textual-view)
-                                          &key acceptably)
-  (declare (ignore acceptably))
-  (formatting-cell (stream :align-x :left)
-    (format stream ""))
-  (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string info)))
-  (with-application-frame (frame)
-    (when (show-uri frame)
-      (formatting-cell (stream :align-x :left)
-        (format stream "")))))
-
-(define-presentation-type html-file () :inherit-from '((string)
-                                                       :description "html-file"))
-
-(define-presentation-method present (html-file (type html-file) stream
-                                               (view special-textual-view)
-                                               &key acceptably)
-  (declare (ignore acceptably))
-  (formatting-cell (stream :align-x :left)
-    (display-type html-file stream))
-  (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string html-file)))
-  (with-application-frame (frame)
-    (when (show-uri frame)
-      (formatting-cell (stream :align-x :left)
-        (format stream "~a" (selector html-file))))))
-
-(defun display-submenu (lines stream)
+(defun display-submenu-lines (lines stream)
   (formatting-table (stream :x-spacing '(3 :character))
     (loop for line in lines
+       for view = (make-instance 'main-table-view)
        do (formatting-row (stream)
             (case (line-type line)
-              (:info-message (present line 'info :stream stream))
-              (:error-code   (present line 'info :stream stream))
-              (:html-file    (present line 'html-file :stream stream
-                                      :view (make-instance 'special-textual-view)))
-              (:search       (present line 'search :stream stream
-                                      :view (make-instance 'special-textual-view)))
-              (t             (present line 'gopher-line :stream stream
-                                      :view (make-instance 'special-textual-view))))))))
+              (:info-message (present line 'info :stream stream :view view))
+              (:error-code   (present line 'info :stream stream :view view))
+              (:html-file    (present line 'html-file :stream stream :view view))
+              (:search       (present line 'search :stream stream :view view))
+              (t             (present line 'viewable-gopher-line :stream stream :view view)))))))
+
+(defun display-submenu (submenu stream)
+  (let ((lines (gopher-get-submenu submenu)))
+    (display-submenu-lines lines stream)))
+
+(defun display-search (search stream)
+  (let ((lines (gopher-do-search search)))
+    (display-submenu-lines lines stream)))
+
+(defun file-pathname (image)
+  (if (stringp (pathname-name (selector image)))
+      (format nil "/tmp/clim-gopher_~a.~a" (pathname-name (selector image))
+              (pathname-type (selector image)))
+      (format nil "/tmp/clim-gopher_unknown-~a" (random 100000))))
 
 (defun display-image (image stream)
-  (let ((dl-name (format nil "/tmp/~a.~a" (pathname-name (selector image))
-                         (pathname-type (selector image)))))
+  (let ((dl-name (file-pathname image)))
     (download-file dl-name
                    (hostname image)
                    (port image)
                    (selector image))
+    (handler-case
+        (with-application-frame (frame)
+          (let ((pattern (make-pattern-from-bitmap-file dl-name :format (get-type dl-name))))
+            (with-room-for-graphics ()
+              (draw-pattern* stream pattern 0 0))))
+      (clim-extensions:unsupported-bitmap-format (e)
+        (format stream "Error: ~a~%" e)
+        (format stream "You can find the file at: ~a~%" dl-name)
+        nil))))
 
-    (let* ((type (funcall (case (readtable-case *readtable*)
-                            (:upcase #'string-upcase)
-                            (:downcase #'string-downcase)
-                            (t #'identity))
-                          (pathname-type dl-name)))
-           (format (find-symbol type (find-package :keyword))))
-      (handler-case
-          (with-application-frame (frame)
-            (let ((pattern (make-pattern-from-bitmap-file dl-name :format format)))
-              (with-room-for-graphics ()
-                (draw-pattern* stream pattern 0 0))))
-        (clim-extensions:unsupported-bitmap-format (e) nil)))))
+(defun display-as-text (gl stream)
+  (let ((lines (text-file-get-lines gl)))
+    (with-application-frame (frame)
+      (loop for line in lines
+         do (format stream "~a~%" line))
+      (scroll-extent (find-pane-named frame 'main-display) 0 0))))
 
 (defun display-main (frame stream)
   (let ((current (car (history frame))))
-    (case (line-type current)
-      (:submenu (let ((lines (gopher-get-submenu current)))
-                  (display-submenu lines stream)))
-      (:search (let ((lines (gopher-do-search current)))
-                 (display-submenu lines stream)))
-      (:text-file (let ((lines (text-file-get-lines current)))
-                    (loop for line in lines
-                       do (format stream "~a~%" line))))
-      (:image (display-image current stream))
-      (:png (display-image current stream))
-      (:gif (display-image current stream)))))
+    (clim:with-drawing-options (stream :text-style (make-text-style nil :italic :large))
+      (present current 'gopher-line :stream stream)
+      (format stream "~%~%"))
+    (handler-case
+        (case (line-type current)
+          (:submenu (handler-case (display-submenu current stream)
+                      (error (e) (display-as-text current stream))))
+          (:search (display-search current stream))
+          (:text-file (display-as-text current stream))
+          (:image (display-image current stream))
+          (:png (display-image current stream))
+          (:gif (display-image current stream))
+          (t (let ((dl-name (file-pathname current)))
+               (download-file dl-name
+                              (hostname current)
+                              (port current)
+                              (selector current))
+               (format stream "Don't know how to display:~%~a~%File downloaded at:~a~%"
+                       current dl-name))))
+      (error (e)
+        (format stream "Failed to Display file:~%")
+        (present current 'viewable-gopher-line)
+        (format stream "~%Error: ~a~%" e)))))
 
 (defun display-history (frame stream)
-  (display-submenu (history frame) stream))
+  (clim:with-drawing-options (stream :text-style (make-text-style nil nil :large))
+    (format stream "HISTORY~%"))
+  (display-submenu-lines (history frame) stream))
 
-(defun make-button (title action)
-  (make-pane 'push-button
-             :label title
-             :activate-callback (lambda (b)
-                                  (declare (ignore b))
-                                  (funcall action))))
+(defun display-bookmarks (frame stream)
+  (clim:with-drawing-options (stream :text-style (make-text-style nil nil :large))
+    (format stream "BOOKMARKS~%"))
+  (display-submenu-lines (bookmarks (bookmarks frame)) stream))
 
 (define-application-frame gopher ()
   ((history :initform nil :accessor history)
-   (show-uri :initform nil :initarg :show-uri :accessor show-uri))
+   (show-uri :initform nil :initarg :show-uri :accessor show-uri)
+   (bookmarks :initform (load-bookmarks) :accessor bookmarks))
   (:panes
    (main-display
     :application
     :display-function 'display-main
     :display-time t
-    :scroll-bars t)
+    :scroll-bars t
+    :text-style (make-text-style :fix nil nil))
    (history-display
     :application
     :display-function 'display-history
     :display-time t
     :scroll-bars t)
-   (int :interactor))
+   (bookmarks-display
+    :application
+    :display-function 'display-bookmarks
+    :display-time t
+    :scroll-bars t))
   (:command-definer define-gopher-command)
   (:menu-bar t)
   (:layouts
-   (default (vertically ()
-              (99/100 main-display)
-              (1/100 int)))
-   (history (vertically ()
-              (99/100
-               (horizontally ()
+   (default main-display)
+   (history (horizontally ()
+              (2/3 main-display)
+              (1/3 history-display)))
+   (bookmarks (horizontally ()
                  (2/3 main-display)
-                 (1/3 history-display)))
-              (1/100 int)))))
+                 (1/3 bookmarks-display)))))
 
 ;;; Redisplay machinery
 (defclass main-redisplay-event (window-manager-event)
   ((item :initarg :item :accessor item)))
 
 (defmethod handle-event ((frame gopher) (event main-redisplay-event))
-  (format *error-output* "Handling redisplay event: ~a~%" event)
   (with-application-frame (frame)
     (let ((main-pane (find-pane-named frame 'main-display))
-          (history-pane (find-pane-named frame 'history-display)))
-      (setf (pane-needs-redisplay main-pane) t)
-      (redisplay-frame-pane frame main-pane)
+          (history-pane (find-pane-named frame 'history-display))
+          (bookmarks-pane (find-pane-named frame 'bookmarks-display)))
+
+      (when main-pane
+        (setf (pane-needs-redisplay main-pane) t)
+        (redisplay-frame-pane frame main-pane))
 
       (when history-pane
         (setf (pane-needs-redisplay history-pane) t)
-        (redisplay-frame-pane frame history-pane)))))
+        (redisplay-frame-pane frame history-pane))
+
+      (when bookmarks-pane
+        (setf (pane-needs-redisplay bookmarks-pane) t)
+        (redisplay-frame-pane frame bookmarks-pane)))))
 
 (defun perform-main-redisplay (gopher-app)
-  (format *error-output* "perform-main-redisplay~%")
   (queue-event (frame-top-level-sheet gopher-app)
                (make-instance 'main-redisplay-event
                               :sheet gopher-app)))
 
-
-;;; Commands
+;;; Menu Commands
 (define-gopher-command (com-back :name t :menu t) ()
   (with-application-frame (frame)
     (when (> (length (history frame)) 1)
@@ -225,8 +158,20 @@
 (define-gopher-command (com-history :name t :menu t) ()
   (with-application-frame (frame)
     (case (frame-current-layout frame)
-      (default (setf (frame-current-layout frame) 'history))
-      (history (setf (frame-current-layout frame) 'default)))
+      (history (setf (frame-current-layout frame) 'default))
+      (t (setf (frame-current-layout frame) 'history)))
+    (perform-main-redisplay frame)))
+
+(define-gopher-command (com-bookmarks :name t :menu t) ()
+  (with-application-frame (frame)
+    (case (frame-current-layout frame)
+      (bookmarks (setf (frame-current-layout frame) 'default))
+      (t (setf (frame-current-layout frame) 'bookmarks)))
+    (perform-main-redisplay frame)))
+
+(define-gopher-command (com-bookmark-this-page :name t :menu t) ()
+  (with-application-frame (frame)
+    (add-bookmark (bookmarks frame) (car (history frame)))
     (perform-main-redisplay frame)))
 
 (define-gopher-command (com-toggle-uri-display :name t :menu t) ()
@@ -234,21 +179,45 @@
     (setf (show-uri frame) (not (show-uri frame)))
     (perform-main-redisplay frame)))
 
-(define-gopher-command (com-go-line :name t) ((gopher-line 'gopher-line))
+;;; Element commands
+(define-gopher-command (com-go-line :name t) ((viewable-gopher-line 'viewable-gopher-line))
   (with-application-frame (frame)
-    (push gopher-line (history frame))
+    (push viewable-gopher-line (history frame))
     (perform-main-redisplay frame)))
 
 (define-presentation-to-command-translator go-line
-    (gopher-line com-go-line gopher
+    (viewable-gopher-line com-go-line gopher
                  :gesture :select		;command activated with left-click on a node
-                 :menu t)              ;includes this command in right-click menu
+                 :menu t)               ;includes this command in right-click menu
+    (object) (list object))
+
+(define-gopher-command (com-add-bookmark :name t) ((gopher-line 'gopher-line))
+  (with-application-frame (frame)
+    (add-bookmark (bookmarks frame) gopher-line)
+    (perform-main-redisplay frame)))
+
+(define-presentation-to-command-translator add-bookmark
+    (gopher-line com-add-bookmark gopher
+            :menu t)              ;includes this command in right-click menu
+    (object) (list object))
+
+(define-gopher-command (com-remove-bookmark :name t) ((gopher-line 'gopher-line))
+  (with-application-frame (frame)
+    (remove-bookmark (bookmarks frame) gopher-line)
+    (perform-main-redisplay frame)))
+
+(define-presentation-to-command-translator remove-bookmark
+    (gopher-line com-remove-bookmark gopher
+            :menu t)              ;includes this command in right-click menu
     (object) (list object))
 
 (define-gopher-command (com-search :name t) ((search 'search))
   (with-application-frame (frame)
     (let ((mod-search (copy-gopher-line search))
-          (search-terms (clim:accept 'string :prompt "search")))
+          (search-terms
+           (accepting-values (t :own-window t)
+             (format t "~a~%" (display-string search))
+             (accept 'string :prompt "search"))))
       (when (not (equal search-terms ""))
         (setf (terms mod-search)
               search-terms))
@@ -273,8 +242,11 @@
                :menu t)              ;includes this command in right-click menu
     (object) (list object))
 
-(define-gopher-command (com-go-path :name t) ((path 'string))
-  (let ((uri (if (and (>= (length path) 9) (equal "gopher://" (subseq path 0 9)))
+(define-gopher-command (com-go-path :name t :menu t) ()
+  (let* ((path
+          (accepting-values (t :own-window t)
+            (accept 'string :prompt "path")))
+         (uri (if (and (>= (length path) 9) (equal "gopher://" (subseq path 0 9)))
                  (quri:uri path)
                  (quri:uri (format nil "gopher://~a" path)))))
     (with-application-frame (frame)
@@ -289,7 +261,7 @@
       (perform-main-redisplay frame))))
 
 (defvar *app*)
-(defun browser ()
+(defun browser (&key separate-thread)
   (setf *app* (clim:make-application-frame 'clim-gopher::gopher
                                            :width 1024
                                            :height 768))
@@ -299,4 +271,7 @@
                                              :selector "/"
                                              :hostname "gopher.floodgap.com"
                                              :port 70)))
-  (clim:run-frame-top-level *app*))
+  (if separate-thread
+      (clim-sys:make-process (lambda () (clim:run-frame-top-level *app*))
+                             :name "Gopher Application")
+      (clim:run-frame-top-level *app*)))
