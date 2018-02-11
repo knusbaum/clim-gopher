@@ -6,18 +6,18 @@
   :depends-on (#:mcclim #:split-sequence #:iolib #:quri
                         #:trivial-open-browser #:split-sequence
                         #:trivial-mimes)
-  :components ((:file "clim-gopher-package")
-               (:file "clim-gopher-icons"
-                      :depends-on ("clim-gopher-package"))
-               (:file "clim-gopher-protocol"
-                      :depends-on ("clim-gopher-package"))
-               (:file "clim-gopher-bookmarks"
-                      :depends-on ("clim-gopher-package"))
+  :components ((:file "package")
+               (:file "icons"
+                      :depends-on ("package"))
+               (:file "protocol"
+                      :depends-on ("package"))
+               (:file "bookmarks"
+                      :depends-on ("package"))
                (:file "presentation"
-                      :depends-on ("clim-gopher-package"))
+                      :depends-on ("package"))
                (:file "clim-gopher"
-                      :depends-on ("clim-gopher-package"
-                                   "clim-gopher-protocol"
-                                   "clim-gopher-icons"
-                                   "clim-gopher-bookmarks"
+                      :depends-on ("package"
+                                   "protocol"
+                                   "icons"
+                                   "bookmarks"
                                    "presentation"))))
