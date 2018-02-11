@@ -2,5 +2,30 @@
 
 (load "~/.sbclrc")
 (ql:quickload 'clim-gopher)
+(ql:quickload 'net.didierverna.clon)
 
-(save-lisp-and-die "gopher" :toplevel 'clim-gopher:browser :executable t :compression t :purify t)
+(net.didierverna.clon:nickname-package)
+
+(net.didierverna.clon:defsynopsis ()
+  (text :contents "A small graphical Gopher Browser to surf gopherspace")
+  (group (:header "Options:")
+    (flag :short-name "h" :long-name "help"
+          :description "Print this help and exit.")
+    (stropt :short-name "r" :long-name "resources"
+            :description "A path to the resource directory.")))
+
+(defun main ()
+  (clon:make-context)
+  (when (clon:getopt :short-name "h")
+    (clon:help)
+    (clon:exit))
+;  (clon:do-cmdline-options (option name value source)
+;    (print (list option name value source)))
+
+  (let ((res-path (clon:getopt :short-name "r")))
+    (when res-path
+      (setf clim-gopher::*resource-path* res-path)))
+  (clim-gopher:browser))
+
+(save-lisp-and-die "gopher" :toplevel #'main :executable t :compression t :purify t
+                   :save-runtime-options t)
