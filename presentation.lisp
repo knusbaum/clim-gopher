@@ -22,7 +22,10 @@
           (port gopher-line)
           (selector gopher-line)))
 
-(define-presentation-type viewable-gopher-line () :inherit-from '((gopher-line)
+(define-presentation-type clickable-gopher-line () :inherit-from '((gopher-line)
+                                                         :description "gopher line"))
+
+(define-presentation-type viewable-gopher-line () :inherit-from '((clickable-gopher-line)
                                                          :description "viewable gopher line"))
 
 (define-presentation-method present (viewable-gopher-line (type viewable-gopher-line) stream
@@ -41,7 +44,7 @@
                 (port viewable-gopher-line)
                 (selector viewable-gopher-line))))))
 
-(define-presentation-type search () :inherit-from '((gopher-line)
+(define-presentation-type search () :inherit-from '((clickable-gopher-line)
                                                     :description "search"))
 
 (define-presentation-method present (search (type search) stream
@@ -77,7 +80,7 @@
       (formatting-cell (stream :align-x :left)
         (format stream "")))))
 
-(define-presentation-type html-file () :inherit-from '((gopher-line)
+(define-presentation-type html-file () :inherit-from '((clickable-gopher-line)
                                                        :description "html-file"))
 
 (define-presentation-method present (html-file (type html-file) stream

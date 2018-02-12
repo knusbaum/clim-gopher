@@ -191,23 +191,23 @@
                  :menu t)               ;includes this command in right-click menu
     (object) (list object))
 
-(define-gopher-command (com-add-bookmark :name t) ((gopher-line 'gopher-line))
+(define-gopher-command (com-add-bookmark :name t) ((clickable-gopher-line 'clickable-gopher-line))
   (with-application-frame (frame)
-    (add-bookmark (bookmarks frame) gopher-line)
+    (add-bookmark (bookmarks frame) clickable-gopher-line)
     (perform-main-redisplay frame)))
 
 (define-presentation-to-command-translator add-bookmark
-    (gopher-line com-add-bookmark gopher
+    (clickable-gopher-line com-add-bookmark gopher
             :menu t)              ;includes this command in right-click menu
     (object) (list object))
 
-(define-gopher-command (com-remove-bookmark :name t) ((gopher-line 'gopher-line))
+(define-gopher-command (com-remove-bookmark :name t) ((clickable-gopher-line 'clickable-gopher-line))
   (with-application-frame (frame)
-    (remove-bookmark (bookmarks frame) gopher-line)
+    (remove-bookmark (bookmarks frame) clickable-gopher-line)
     (perform-main-redisplay frame)))
 
 (define-presentation-to-command-translator remove-bookmark
-    (gopher-line com-remove-bookmark gopher
+    (clickable-gopher-line com-remove-bookmark gopher
             :menu t)              ;includes this command in right-click menu
     (object) (list object))
 

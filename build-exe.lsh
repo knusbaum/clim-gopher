@@ -23,8 +23,9 @@
 ;    (print (list option name value source)))
 
   (let ((res-path (clon:getopt :short-name "r")))
-    (when res-path
-      (setf clim-gopher::*resource-path* res-path)))
+    (if res-path
+        (setf clim-gopher::*resource-path* res-path)
+        (setf clim-gopher::*resource-path* (merge-pathnames #P"/res/"))))
   (clim-gopher:browser))
 
 (save-lisp-and-die "gopher" :toplevel #'main :executable t :compression t :purify t
