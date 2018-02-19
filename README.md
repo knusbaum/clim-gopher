@@ -2,6 +2,8 @@
 
 Browse Gopherspace in Common Lisp.
 
+![Gopher Browser](https://raw.githubusercontent.com/knusbaum/clim-gopher/master/screencap.png)
+
 ## Requirements
 
 For html links to work properly `xdg-utils` must be installed on linux.
