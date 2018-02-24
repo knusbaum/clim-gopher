@@ -3,7 +3,7 @@
   :description "CLIM Gopher client GUI"
   :license "MIT"
   :author "Kyle Nusbaum"
-  :depends-on (#:mcclim #:split-sequence #:iolib #:quri
+  :depends-on (#:mcclim #:split-sequence #:usocket #:flexi-streams #:quri
                         #:trivial-open-browser #:split-sequence
                         #:trivial-mimes)
   :components ((:file "package")

@@ -117,15 +117,19 @@
 
 (defmacro with-gopher-socket-for-selector ((stream host port selector) &rest body)
   (let ((sock (gensym "sock")))
-    `(let* ((,sock (iolib:make-socket
-                    :external-format '(:ISO-8859-1 :eol-style :crlf)
-                    :connect :active
-                    :address-family :internet
-                    :type :stream))
-            (,stream (iolib:connect ,sock (iolib:lookup-hostname ,host) :port ,port)))
-       (write-line ,selector ,stream)
-       (force-output ,stream)
-       ,@body)))
+    `(let* ((,sock (usocket:socket-connect ,host ,port :element-type '(unsigned-byte 8)))
+            (,stream (flexi-streams:make-flexi-stream
+                      (usocket:socket-stream ,sock)
+                      :external-format (flexi-streams:make-external-format :iso-8859-1
+                                                                           :eol-style :crlf)))
+            (babel-encodings:*suppress-character-coding-errors* t))
+       (unwind-protect
+            (progn
+              (write-line ,selector ,stream)
+              (force-output ,stream)
+              ,@body)
+         (close ,stream)
+         (usocket:socket-close ,sock)))))
 
 (defun gopher-get-directory (host port selector)
   (with-gopher-socket-for-selector (sock-stream host port selector)

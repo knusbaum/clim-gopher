@@ -32,4 +32,6 @@
 
 (defun remove-bookmark (bookmarks gl)
   (setf (bookmarks bookmarks)
-        (delete gl (bookmarks bookmarks) :test #'bookmark-matches)))
+        (delete gl (bookmarks bookmarks) :test #'bookmark-matches))
+  (with-open-file (os (fname bookmarks) :direction :output :if-exists :supersede)
+    (write (marshall-gopher-lines (bookmarks bookmarks)) :stream os)))
