@@ -106,14 +106,14 @@
                                   :display-string (elt line-elems 0)
                                   :selector (elt line-elems 1)
                                   :hostname (elt line-elems 2)
-                                  :port (elt line-elems 3)))
+                                  :port (parse-integer (elt line-elems 3))))
           (t
            (make-instance 'gopher-line
                           :line-type type
                           :display-string (elt line-elems 0)
                           :selector (elt line-elems 1)
                           :hostname (elt line-elems 2)
-                          :port (elt line-elems 3))))))))
+                          :port (parse-integer (elt line-elems 3)))))))))
 
 (defmacro with-gopher-socket-for-selector ((stream host port selector) &rest body)
   (let ((sock (gensym "sock")))
