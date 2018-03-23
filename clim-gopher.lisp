@@ -261,17 +261,30 @@
       (perform-main-redisplay frame))))
 
 (defvar *app*)
-(defun browser (&key separate-thread)
-  (setf *app* (clim:make-application-frame 'clim-gopher::gopher
-                                           :width 1024
-                                           :height 768))
-  (setf (history *app*) (list (make-instance 'gopher-line
-                                             :line-type :submenu
-                                             :display-string "Home"
-                                             :selector "/"
-                                             :hostname "gopher.floodgap.com"
-                                             :port 70)))
-  (if separate-thread
-      (clim-sys:make-process (lambda () (clim:run-frame-top-level *app*))
-                             :name "Gopher Application")
-      (clim:run-frame-top-level *app*)))
+(defun browser (&key separate-thread url)
+  (let ((selector "/")
+        (hostname "gopher.floodgap.com")
+        (port 70))
+
+    (when (not (null url))
+      (let ((uri
+             (if (and (>= (length url) 9) (equal "gopher://" (subseq url 0 9)))
+                 (quri:uri url)
+                 (quri:uri (format nil "gopher://~a" url)))))
+        (setf selector (or (quri:uri-path uri) "/"))
+        (setf hostname (quri:uri-host uri))
+        (setf port (or (quri:uri-port uri) 70))))
+    
+    (setf *app* (clim:make-application-frame 'clim-gopher::gopher
+                                             :width 1024
+                                             :height 768))
+    (setf (history *app*) (list (make-instance 'gopher-line
+                                               :line-type :submenu
+                                               :display-string "Home"
+                                               :selector selector
+                                               :hostname hostname
+                                               :port port)))
+    (if separate-thread
+        (clim-sys:make-process (lambda () (clim:run-frame-top-level *app*))
+                               :name "Gopher Application")
+        (clim:run-frame-top-level *app*))))
