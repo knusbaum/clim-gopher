@@ -17,7 +17,7 @@
   (present line 'search :stream stream :view view))
 
 (defmethod present-gopher-line ((line cl-gopher:unknown) stream view)
-  (present line 'unknown :stream stream :view view))
+  (present line 'viewable-gopher-line :stream stream :view view))
 
 (defun display-submenu-lines (lines stream)
   (formatting-table (stream :x-spacing '(3 :character))
@@ -35,7 +35,7 @@
 
 (defun display-as-text (gl stream)
   (with-application-frame (frame)
-    (let ((contents (cl-gopher:get-line-contents gl)))
+    (let ((contents (cl-gopher:get-line-contents (cl-gopher:convert-to-text-line gl))))
       (cl-gopher:display-contents contents))
     (scroll-extent (find-pane-named frame 'main-display) 0 0)))
 
@@ -56,7 +56,7 @@
   (handler-case
       (let ((lines (cl-gopher:lines (cl-gopher:get-line-contents gl))))
         (display-submenu-lines lines stream))
-    (error (e) (display-as-text gl stream))))
+    (cl-gopher:bad-submenu-error (e) (display-as-text gl stream))))
 
 (defmethod main-display-line ((gl cl-gopher:search-line) stream)
   (let ((lines (cl-gopher:lines (cl-gopher:get-line-contents gl))))
