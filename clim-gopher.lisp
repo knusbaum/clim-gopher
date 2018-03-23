@@ -16,6 +16,9 @@
 (defmethod present-gopher-line ((line cl-gopher:search-line) stream view)
   (present line 'search :stream stream :view view))
 
+(defmethod present-gopher-line ((line cl-gopher:unknown) stream view)
+  (present line 'unknown :stream stream :view view))
+
 (defun display-submenu-lines (lines stream)
   (formatting-table (stream :x-spacing '(3 :character))
     (loop for line in lines
@@ -40,9 +43,14 @@
 
 (defmethod main-display-line ((gl cl-gopher:gopher-line) stream)
   (let ((dl-name (file-pathname gl)))
-    (cl-gopher:download-file dl-name gl)
-    (format stream "Don't know how to display:~%~a~%File downloaded at:~a~%"
-            gl dl-name)))
+    (format stream "Don't know how to display:~%~a~%"
+            gl)
+    (handler-case
+        (progn
+          (cl-gopher:download-file dl-name gl)
+          (format stream "File downloaded at:~a~%"
+                  dl-name))
+      (error (e) (format stream "Failed to download: ~a~%" e)))))
 
 (defmethod main-display-line ((gl cl-gopher:submenu) stream)
   (handler-case

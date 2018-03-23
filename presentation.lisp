@@ -91,3 +91,18 @@
       (formatting-cell (stream :align-x :left)
         (format stream "~a" (cl-gopher:selector html-file))))))
 
+(define-presentation-type unknown () :inherit-from '((gopher-line)
+                                                  :description "unknown"))
+
+(define-presentation-method present (unknown (type unknown) stream
+                                          (view main-table-view)
+                                          &key acceptably)
+  (declare (ignore acceptably))
+  (formatting-cell (stream :align-x :left)
+    (display-type unknown stream))
+  (formatting-cell (stream :align-x :left)
+    (format stream "~a" (cl-gopher:display-string unknown)))
+  (with-application-frame (frame)
+    (when (show-uri frame)
+      (formatting-cell (stream :align-x :left)
+        (format stream "")))))
