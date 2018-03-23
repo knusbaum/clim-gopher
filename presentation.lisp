@@ -4,11 +4,11 @@
 (defclass main-table-view (textual-view) ())
 
 (defun display-type (line stream)
-  (let ((icon (icon-for (line-type line))))
+  (let ((icon (icon-for (cl-gopher:line-type line))))
     (if icon
         (with-room-for-graphics ()
           (draw-design stream icon))
-        (format stream "~a" (string-downcase (line-type line))))))
+        (format stream "~a" (string-downcase (cl-gopher:line-type line))))))
 
 (define-presentation-type gopher-line () :inherit-from '((string)
                                                          :description "gopher line"))
@@ -17,10 +17,9 @@
                                                  (view textual-view)
                                                  &key acceptably)
   (declare (ignore acceptably))
-  (format stream "~a[gopher://~a:~a~a]"  (display-string gopher-line)
-          (hostname gopher-line)
-          (port gopher-line)
-          (selector gopher-line)))
+  (format stream "~a[~a]"
+          (cl-gopher:display-string gopher-line)
+          (cl-gopher:uri-for-gopher-line gopher-line)))
 
 (define-presentation-type clickable-gopher-line () :inherit-from '((gopher-line)
                                                          :description "gopher line"))
@@ -35,14 +34,11 @@
   (formatting-cell (stream :align-x :left)
     (display-type viewable-gopher-line stream))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string viewable-gopher-line)))
+    (format stream "~a" (cl-gopher:display-string viewable-gopher-line)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
-        (format stream "gopher://~a:~a~a"
-                (hostname viewable-gopher-line)
-                (port viewable-gopher-line)
-                (selector viewable-gopher-line))))))
+        (format stream "~a" (cl-gopher:uri-for-gopher-line viewable-gopher-line))))))
 
 (define-presentation-type search () :inherit-from '((clickable-gopher-line)
                                                     :description "search"))
@@ -54,15 +50,14 @@
   (formatting-cell (stream :align-x :left)
     (display-type search stream))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string search)))
+    (format stream "~a" (cl-gopher:display-string search)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
-        (format stream "gopher://~a:~a~a?~a"
-                (hostname search)
-                (port search)
-                (selector search)
-                (terms search))))))
+        (format stream "~a~c~a"
+                (cl-gopher:uri-for-gopher-line search)
+                #\Tab
+                (cl-gopher:terms search))))))
 
 (define-presentation-type info () :inherit-from '((gopher-line)
                                                   :description "info"))
@@ -74,7 +69,7 @@
   (formatting-cell (stream :align-x :left)
     (format stream ""))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string info)))
+    (format stream "~a" (cl-gopher:display-string info)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
@@ -90,9 +85,9 @@
   (formatting-cell (stream :align-x :left)
     (display-type html-file stream))
   (formatting-cell (stream :align-x :left)
-    (format stream "~a" (display-string html-file)))
+    (format stream "~a" (cl-gopher:display-string html-file)))
   (with-application-frame (frame)
     (when (show-uri frame)
       (formatting-cell (stream :align-x :left)
-        (format stream "~a" (selector html-file))))))
+        (format stream "~a" (cl-gopher:selector html-file))))))
 

@@ -1,37 +1,62 @@
 (in-package :clim-gopher)
 
+(defgeneric present-gopher-line (line stream view))
+(defmethod present-gopher-line ((line cl-gopher:gopher-line) stream view)
+  (present line 'viewable-gopher-line :stream stream :view view))
+
+(defmethod present-gopher-line ((line cl-gopher:info-message) stream view)
+  (present line 'info :stream stream :view view))
+
+(defmethod present-gopher-line ((line cl-gopher:error-code) stream view)
+  (present line 'info :stream stream :view view))
+
+(defmethod present-gopher-line ((line cl-gopher:html-file) stream view)
+  (present line 'html-file :stream stream :view view))
+
+(defmethod present-gopher-line ((line cl-gopher:search-line) stream view)
+  (present line 'search :stream stream :view view))
+
 (defun display-submenu-lines (lines stream)
   (formatting-table (stream :x-spacing '(3 :character))
     (loop for line in lines
        for view = (make-instance 'main-table-view)
        do (formatting-row (stream)
-            (case (line-type line)
-              (:info-message (present line 'info :stream stream :view view))
-              (:error-code   (present line 'info :stream stream :view view))
-              (:html-file    (present line 'html-file :stream stream :view view))
-              (:search       (present line 'search :stream stream :view view))
-              (t             (present line 'viewable-gopher-line :stream stream :view view)))))))
+             (present-gopher-line line stream view)))))
 
-(defun display-submenu (submenu stream)
-  (let ((lines (gopher-get-submenu submenu)))
+(defun file-pathname (line)
+  (with-slots (cl-gopher:selector) line
+    (if (stringp (pathname-name cl-gopher:selector))
+        (format nil "/tmp/clim-gopher_~a.~a" (pathname-name cl-gopher:selector)
+                (pathname-type cl-gopher:selector))
+        (format nil "/tmp/clim-gopher_unknown-~a" (random 100000)))))
+
+(defun display-as-text (gl stream)
+  (with-application-frame (frame)
+    (let ((contents (cl-gopher:get-line-contents gl)))
+      (cl-gopher:display-contents contents))
+    (scroll-extent (find-pane-named frame 'main-display) 0 0)))
+
+(defgeneric main-display-line (gl stream))
+
+(defmethod main-display-line ((gl cl-gopher:gopher-line) stream)
+  (let ((dl-name (file-pathname gl)))
+    (cl-gopher:download-file dl-name gl)
+    (format stream "Don't know how to display:~%~a~%File downloaded at:~a~%"
+            gl dl-name)))
+
+(defmethod main-display-line ((gl cl-gopher:submenu) stream)
+  (handler-case
+      (let ((lines (cl-gopher:lines (cl-gopher:get-line-contents gl))))
+        (display-submenu-lines lines stream))
+    (error (e) (display-as-text gl stream))))
+
+(defmethod main-display-line ((gl cl-gopher:search-line) stream)
+  (let ((lines (cl-gopher:lines (cl-gopher:get-line-contents gl))))
     (display-submenu-lines lines stream)))
-
-(defun display-search (search stream)
-  (let ((lines (gopher-do-search search)))
-    (display-submenu-lines lines stream)))
-
-(defun file-pathname (image)
-  (if (stringp (pathname-name (selector image)))
-      (format nil "/tmp/clim-gopher_~a.~a" (pathname-name (selector image))
-              (pathname-type (selector image)))
-      (format nil "/tmp/clim-gopher_unknown-~a" (random 100000))))
 
 (defun display-image (image stream)
   (let ((dl-name (file-pathname image)))
-    (download-file dl-name
-                   (hostname image)
-                   (port image)
-                   (selector image))
+    (cl-gopher:download-file dl-name image)
     (handler-case
         (with-application-frame (frame)
           (let ((pattern (make-pattern-from-bitmap-file dl-name :format (get-type dl-name))))
@@ -42,12 +67,17 @@
         (format stream "You can find the file at: ~a~%" dl-name)
         nil))))
 
-(defun display-as-text (gl stream)
-  (let ((lines (text-file-get-lines gl)))
-    (with-application-frame (frame)
-      (loop for line in lines
-         do (format stream "~a~%" line))
-      (scroll-extent (find-pane-named frame 'main-display) 0 0))))
+(defmethod main-display-line ((gl cl-gopher:image) stream)
+  (display-image gl stream))
+
+(defmethod main-display-line ((gl cl-gopher:png) stream)
+  (display-image gl stream))
+
+(defmethod main-display-line ((gl cl-gopher:gif) stream)
+  (display-image gl stream))
+
+(defmethod main-display-line ((gl cl-gopher:text-file) stream)
+  (display-as-text gl stream))
 
 (defun display-main (frame stream)
   (let ((current (car (history frame))))
@@ -55,21 +85,7 @@
       (present current 'gopher-line :stream stream)
       (format stream "~%~%"))
     (handler-case
-        (case (line-type current)
-          (:submenu (handler-case (display-submenu current stream)
-                      (error (e) (display-as-text current stream))))
-          (:search (display-search current stream))
-          (:text-file (display-as-text current stream))
-          (:image (display-image current stream))
-          (:png (display-image current stream))
-          (:gif (display-image current stream))
-          (t (let ((dl-name (file-pathname current)))
-               (download-file dl-name
-                              (hostname current)
-                              (port current)
-                              (selector current))
-               (format stream "Don't know how to display:~%~a~%File downloaded at:~a~%"
-                       current dl-name))))
+        (main-display-line current stream)
       (error (e)
         (format stream "Failed to Display file:~%")
         (present current 'viewable-gopher-line)
@@ -213,13 +229,13 @@
 
 (define-gopher-command (com-search :name t) ((search 'search))
   (with-application-frame (frame)
-    (let ((mod-search (copy-gopher-line search))
+    (let ((mod-search (cl-gopher:copy-gopher-line search))
           (search-terms
            (accepting-values (t :own-window t)
-             (format t "~a~%" (display-string search))
+             (cl-gopher:display-line search :stream t :include-newline t)
              (accept 'string :prompt "search"))))
       (when (not (equal search-terms ""))
-        (setf (terms mod-search)
+        (setf (cl-gopher:terms mod-search)
               search-terms))
       (push mod-search (history frame))
       (perform-main-redisplay frame))))
@@ -233,58 +249,32 @@
 (define-gopher-command (com-go-html :name t) ((html-file 'html-file))
   (with-application-frame (frame)
     (handler-case
-        (trivial-open-browser:open-browser (subseq (selector html-file) 4))
+        (trivial-open-browser:open-browser (subseq (cl-gopher:selector html-file) 4))
       (uiop:subprocess-error (e) nil))))
 
 (define-presentation-to-command-translator go-html
     (html-file com-go-html gopher
                :gesture :select		;command activated with left-click on a node
-               :menu t)              ;includes this command in right-click menu
+               :menu t)             ;includes this command in right-click menu
     (object) (list object))
 
 (define-gopher-command (com-go-path :name t :menu t) ()
   (let* ((path
           (accepting-values (t :own-window t)
-            (accept 'string :prompt "path")))
-         (uri (if (and (>= (length path) 9) (equal "gopher://" (subseq path 0 9)))
-                 (quri:uri path)
-                 (quri:uri (format nil "gopher://~a" path)))))
+                            (accept 'string :prompt "path")))
+
+         (gopher-line (cl-gopher:parse-gopher-uri path)))
     (with-application-frame (frame)
-      (push
-       (make-instance 'gopher-line
-                      :line-type :submenu
-                      :display-string "???"
-                      :selector (quri:uri-path uri)
-                      :hostname (quri:uri-host uri)
-                      :port (or (quri:uri-port uri) 70))
-       (history frame))
+      (push gopher-line (history frame))
       (perform-main-redisplay frame))))
 
 (defvar *app*)
-(defun browser (&key separate-thread url)
-  (let ((selector "/")
-        (hostname "gopher.floodgap.com")
-        (port 70))
-
-    (when (not (null url))
-      (let ((uri
-             (if (and (>= (length url) 9) (equal "gopher://" (subseq url 0 9)))
-                 (quri:uri url)
-                 (quri:uri (format nil "gopher://~a" url)))))
-        (setf selector (or (quri:uri-path uri) "/"))
-        (setf hostname (quri:uri-host uri))
-        (setf port (or (quri:uri-port uri) 70))))
-    
-    (setf *app* (clim:make-application-frame 'clim-gopher::gopher
-                                             :width 1024
-                                             :height 768))
-    (setf (history *app*) (list (make-instance 'gopher-line
-                                               :line-type :submenu
-                                               :display-string "Home"
-                                               :selector selector
-                                               :hostname hostname
-                                               :port port)))
-    (if separate-thread
-        (clim-sys:make-process (lambda () (clim:run-frame-top-level *app*))
-                               :name "Gopher Application")
-        (clim:run-frame-top-level *app*))))
+(defun browser (&key separate-thread (url "gopher://gopher.floodgap.com"))
+  (setf *app* (clim:make-application-frame 'clim-gopher::gopher
+                                           :width 1024
+                                           :height 768))
+  (setf (history *app*) (list (cl-gopher:parse-gopher-uri url)))
+  (if separate-thread
+      (clim-sys:make-process (lambda () (clim:run-frame-top-level *app*))
+                             :name "Gopher Application")
+      (clim:run-frame-top-level *app*)))

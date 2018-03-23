@@ -20,7 +20,7 @@
 (defun icon-for (type)
   (case type
     (:submenu (get-icon "folder.png"))
-    (:search (get-icon "search.png"))
+    (:search-line (get-icon "search.png"))
     (:text-file (get-icon "document.png"))
     (:binary-file (get-icon "binary.png"))
     (:gif (get-icon "image.png"))

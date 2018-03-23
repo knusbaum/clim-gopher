@@ -5,11 +5,9 @@
   :author "Kyle Nusbaum"
   :depends-on (#:mcclim #:split-sequence #:usocket #:flexi-streams #:quri
                         #:trivial-open-browser #:split-sequence
-                        #:trivial-mimes)
+                        #:trivial-mimes #:cl-gopher)
   :components ((:file "package")
                (:file "icons"
-                      :depends-on ("package"))
-               (:file "protocol"
                       :depends-on ("package"))
                (:file "bookmarks"
                       :depends-on ("package"))
@@ -17,7 +15,6 @@
                       :depends-on ("package"))
                (:file "clim-gopher"
                       :depends-on ("package"
-                                   "protocol"
                                    "icons"
                                    "bookmarks"
                                    "presentation"))))
