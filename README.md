@@ -8,9 +8,9 @@ Browse Gopherspace in Common Lisp.
 
 For html links to work properly `xdg-utils` must be installed on linux.
 
-This application also depends on the library cl-gopher, available at ![https://github.com/knusbaum/cl-gopher](https://github.com/knusbaum/cl-gopher)
+This application also depends on the library cl-gopher, available at [https://github.com/knusbaum/cl-gopher](https://github.com/knusbaum/cl-gopher)
 
-It also depends on various libraries available through ![quicklisp](https://www.quicklisp.org/beta/)
+It also depends on various libraries available through [quicklisp](https://www.quicklisp.org/beta/)
 
 ### To Run
 
@@ -41,8 +41,8 @@ Right-clicking items (including those in the History and Bookmarks panes) should
 
 ## Distribution and Other Ways to Launch
 
-All of these things are a bit shaky. The scripts may work, but ![your mileage may vary](https://i.imgur.com/Ts0ab7w.gif)
-However the good news is that they are all quite minimal, and any modifications you may need to make should be relatively minor.
+All of these things are a bit shaky. The scripts may work, but [your mileage may vary.](https://i.imgur.com/Ts0ab7w.gif)
+However the good news is that all of the scripts are quite minimal, and any modifications you may need to make should be relatively minor.
 
 #### Building a stand-alone binary
 The `build-exe.lsh` script should build a stand-alone application. This script, however, currently relies on sbcl and several system-specific things. It may work as is, but it is not unlikely that you will have to modify it to make it work.
