@@ -4,6 +4,7 @@ package: clim-gopher.tgz
 
 clim-gopher.tgz: gopher
 	mkdir -p clim-gopher/res
+	cp README.md clim-gopher/
 	cp gopher clim-gopher/
 	cp launch-gopher.sh clim-gopher/
 	cp gopher-view.sh clim-gopher/
