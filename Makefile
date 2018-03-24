@@ -13,3 +13,6 @@ clim-gopher.tgz: gopher
 
 gopher: *.lisp build-exe.lsh
 	./build-exe.lsh
+
+clean:
+	-@rm -rf clim-gopher clim-gopher.tgz gopher
