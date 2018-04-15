@@ -30,10 +30,12 @@
     (if res-path
         (setf clim-gopher::*resource-path* res-path)
         (setf clim-gopher::*resource-path* (merge-pathnames #P"/res/"))))
-  (let ((start-url (clon:getopt :short-name "u")))
-    (if start-url
-        (clim-gopher:browser :url start-url)
-      (clim-gopher:browser))))
+
+      (let ((start-url (clon:getopt :short-name "u")))
+        (if start-url
+            (clim-gopher:browser :url start-url)
+          (clim-gopher:browser))))
+
 
 (save-lisp-and-die "gopher" :toplevel #'main :executable t :compression t :purify t
                    :save-runtime-options t)

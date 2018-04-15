@@ -94,7 +94,7 @@
       (format stream "~%~%"))
     (handler-case
         (main-display-line current stream)
-      (error (e)
+      (condition (e)
         (format stream "Failed to Display file:~%")
         (present current 'viewable-gopher-line)
         (format stream "~%Error: ~a~%" e)))))
@@ -267,14 +267,56 @@
     (object) (list object))
 
 (define-gopher-command (com-go-path :name t :menu t) ()
-  (let* ((path
-          (accepting-values (t :own-window t)
-                            (accept 'string :prompt "path")))
+  (handler-case
+      (let* ((path
+              (accepting-values (t :own-window t)
+                (accept 'string :prompt "path")))
 
-         (gopher-line (cl-gopher:parse-gopher-uri path)))
-    (with-application-frame (frame)
-      (push gopher-line (history frame))
-      (perform-main-redisplay frame))))
+             (gopher-line (cl-gopher:parse-gopher-uri path)))
+        (with-application-frame (frame)
+          (push gopher-line (history frame))
+          (perform-main-redisplay frame)))
+    (error (e) (show-error e "Failed to go to the path that you input"))))
+
+(defun error-display-main (frame stream)
+  (format stream "~a:~%~a~%"
+          (error-message frame)
+          (unhandled-error frame))
+  (clim:with-output-as-gadget (stream)
+    (clim:make-pane 'clim:push-button :label "OK"
+                    :activate-callback (lambda (b)
+                                         (declare (ignore b))
+                                         (clim:frame-exit frame)))))
+
+
+(clim:define-application-frame gopher-error ()
+  ((error-message :initarg :message
+                  :initform "Gopher got an unhandled error"
+                  :accessor error-message)
+   (unhandled-error :initarg :error
+                    :initform nil
+                    :accessor unhandled-error))
+  (:panes
+   (main-display
+    :application
+    :display-function 'error-display-main
+    :display-time t
+    :scroll-bars :vertical))
+  (:layouts
+   (default main-display)))
+
+(defun show-error (e &optional message)
+  (clim:run-frame-top-level
+   (if message
+       (clim:make-application-frame 'gopher-error
+                                    :width 400
+                                    :height 100
+                                    :error e
+                                    :message message)
+       (clim:make-application-frame 'gopher-error
+                                    :width 400
+                                    :height 100
+                                    :error e))))
 
 (defvar *app*)
 (defun browser (&key separate-thread (url "gopher://gopher.floodgap.com"))
@@ -283,6 +325,11 @@
                                            :height 768))
   (setf (history *app*) (list (cl-gopher:parse-gopher-uri url)))
   (if separate-thread
-      (clim-sys:make-process (lambda () (clim:run-frame-top-level *app*))
+      (clim-sys:make-process (lambda ()
+                               (handler-case
+                                   (clim:run-frame-top-level *app*)
+                                 (condition (e) (show-error e))))
                              :name "Gopher Application")
-      (clim:run-frame-top-level *app*)))
+      (handler-case
+          (clim:run-frame-top-level *app*)
+        (condition (e) (show-error e)))))
