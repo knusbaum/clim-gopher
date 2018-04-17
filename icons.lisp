@@ -2,30 +2,39 @@
 
 (defvar *icon-cache* (make-hash-table :test #'equal))
 
-(defun get-type (file)
-  (let ((mime (trivial-mimes:mime file)))
-    (cond
-      ((equal mime "image/gif") :gif)
-      ((equal mime "image/png") :png)
-      ((equal mime "image/jpg") :jpg)
-      (t :bitmap))))
+(eval-when (:compile-toplevel)
+  (defun get-type (file)
+    (let ((mime (trivial-mimes:mime file)))
+      (cond
+        ((equal mime "image/gif") :gif)
+        ((equal mime "image/png") :png)
+        ((equal mime "image/jpg") :jpg)
+        (t :bitmap))))
 
-(defun get-icon (filename)
-  (let ((dl-name (merge-pathnames *resource-path* filename)))
-    (handler-case
-        (let ((pattern (make-pattern-from-bitmap-file dl-name :format (get-type dl-name))))
-          pattern)
-      (clim-extensions:unsupported-bitmap-format (e) nil))))
+  (defun make-icon-array (filename)
+    (let ((dl-name (merge-pathnames "res/" filename)))
+      (format t "dl-name: ~a~%" dl-name)
+      (handler-case
+          (read-bitmap-file dl-name :format (get-type dl-name) :port nil)
+        (clim-extensions:unsupported-bitmap-format (e) nil)))))
+
+(defun make-icon-pattern (array)
+  (make-instance 'clim-internals::rgb-pattern
+                 :image (make-instance 'clim-internals::rgb-image
+                                       :width (array-dimension array 1)
+                                       :height (array-dimension array 0)
+                                       :data array)))
+
 
 (defun icon-for (type)
   (case type
-    (:submenu (get-icon "folder.png"))
-    (:search-line (get-icon "search.png"))
-    (:text-file (get-icon "document.png"))
-    (:binary-file (get-icon "binary.png"))
-    (:gif (get-icon "image.png"))
-    (:png (get-icon "image.png"))
-    (:image (get-icon "image.png"))
-    (:html-file (get-icon "html.png"))
-    (:unknown (get-icon "unknown.png"))
-    (t (get-icon "unknown.png"))))
+    (:submenu (make-icon-pattern #.(make-icon-array "folder.png")))
+    (:search-line (make-icon-pattern #.(make-icon-array "search.png")))
+    (:text-file (make-icon-pattern #.(make-icon-array "document.png")))
+    (:binary-file (make-icon-pattern #.(make-icon-array "binary.png")))
+    (:gif (make-icon-pattern #.(make-icon-array "image.png")))
+    (:png (make-icon-pattern #.(make-icon-array "image.png")))
+    (:image (make-icon-pattern #.(make-icon-array "image.png")))
+    (:html-file (make-icon-pattern #.(make-icon-array "html.png")))
+    (:unknown (make-icon-pattern #.(make-icon-array "unknown.png")))
+    (t (make-icon-pattern #.(make-icon-array "unknown.png")))))

@@ -320,6 +320,7 @@
 
 (defvar *app*)
 (defun browser (&key separate-thread (url "gopher://gopher.floodgap.com"))
+  ;(setq clim-freetype::*enable-autohint* t)
   (setf *app* (clim:make-application-frame 'clim-gopher::gopher
                                            :width 1024
                                            :height 768))
