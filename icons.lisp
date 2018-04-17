@@ -12,7 +12,7 @@
         (t :bitmap))))
 
   (defun make-icon-array (filename)
-    (let ((dl-name (merge-pathnames "res/" filename)))
+    (let ((dl-name (merge-pathnames *resource-path* filename)))
       (handler-case
           (read-bitmap-file dl-name :format (get-type dl-name) :port nil)
         (clim-extensions:unsupported-bitmap-format (e)

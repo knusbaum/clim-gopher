@@ -18,7 +18,7 @@
       (with-open-file (is fname)
         (let ((gopher-lines (read is)))
           (make-instance 'bookmarks
-                         :bookmarks (cl-gopher:unmarshall-gopher-lines gopher-lines))))
+                         :bookmarks (cl-gopher:gopher-lines-from-alist gopher-lines))))
     (file-error (e)
       (declare (ignore e))
       nil)))
@@ -63,7 +63,7 @@
   (or
    (read-bookmarks (bookmarks-path))
    (make-instance 'bookmarks
-                  :bookmarks (cl-gopher:unmarshall-gopher-lines *default-bookmarks*))))
+                  :bookmarks (cl-gopher:gopher-lines-from-alist *default-bookmarks*))))
 
 (defun bookmark-matches (gl1 gl2)
   (and
@@ -75,10 +75,10 @@
   (when (null (find gl (bookmarks bookmarks) :test #'bookmark-matches))
     (push gl (bookmarks bookmarks))
     (with-open-file (os (bookmarks-path) :direction :output :if-exists :supersede)
-      (write (cl-gopher:marshall-gopher-lines (bookmarks bookmarks)) :stream os))))
+      (write (cl-gopher:gopher-lines-to-alist (bookmarks bookmarks)) :stream os))))
 
 (defun remove-bookmark (bookmarks gl)
   (setf (bookmarks bookmarks)
         (delete gl (bookmarks bookmarks) :test #'bookmark-matches))
   (with-open-file (os (bookmarks-path) :direction :output :if-exists :supersede)
-    (write (cl-gopher:marshall-gopher-lines (bookmarks bookmarks)) :stream os)))
+    (write (cl-gopher:gopher-lines-to-alist (bookmarks bookmarks)) :stream os)))
