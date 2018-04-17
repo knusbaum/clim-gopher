@@ -1,7 +1,7 @@
 (asdf:defsystem #:clim-gopher
   :name "clim-gopher"
   :description "CLIM Gopher client GUI"
-  :license "MIT"
+  :license "BSD 2-Clause"
   :author "Kyle Nusbaum"
   :depends-on (#:mcclim #:split-sequence #:usocket #:flexi-streams #:quri
                         #:trivial-open-browser #:split-sequence
