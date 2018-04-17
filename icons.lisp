@@ -13,10 +13,11 @@
 
   (defun make-icon-array (filename)
     (let ((dl-name (merge-pathnames "res/" filename)))
-      (format t "dl-name: ~a~%" dl-name)
       (handler-case
           (read-bitmap-file dl-name :format (get-type dl-name) :port nil)
-        (clim-extensions:unsupported-bitmap-format (e) nil)))))
+        (clim-extensions:unsupported-bitmap-format (e)
+          (declare (ignore e))
+          nil)))))
 
 (defun make-icon-pattern (array)
   (make-instance 'clim-internals::rgb-pattern

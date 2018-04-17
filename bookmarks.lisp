@@ -19,7 +19,9 @@
         (let ((gopher-lines (read is)))
           (make-instance 'bookmarks
                          :bookmarks (cl-gopher:unmarshall-gopher-lines gopher-lines))))
-    (file-error (e) nil)))
+    (file-error (e)
+      (declare (ignore e))
+      nil)))
 
 (defvar *default-bookmarks*
   '(((:port . 70)

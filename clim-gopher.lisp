@@ -36,7 +36,7 @@
 (defun display-as-text (gl stream)
   (with-application-frame (frame)
     (let ((contents (cl-gopher:get-line-contents (cl-gopher:convert-to-text-line gl))))
-      (cl-gopher:display-contents contents))
+      (cl-gopher:display-contents contents :stream stream))
     (scroll-extent (find-pane-named frame 'main-display) 0 0)))
 
 (defgeneric main-display-line (gl stream))
@@ -56,7 +56,9 @@
   (handler-case
       (let ((lines (cl-gopher:lines (cl-gopher:get-line-contents gl))))
         (display-submenu-lines lines stream))
-    (cl-gopher:bad-submenu-error (e) (display-as-text gl stream))))
+    (cl-gopher:bad-submenu-error (e)
+      (declare (ignore e))
+      (display-as-text gl stream))))
 
 (defmethod main-display-line ((gl cl-gopher:search-line) stream)
   (let ((lines (cl-gopher:lines (cl-gopher:get-line-contents gl))))
@@ -66,10 +68,9 @@
   (let ((dl-name (file-pathname image)))
     (cl-gopher:download-file dl-name image)
     (handler-case
-        (with-application-frame (frame)
-          (let ((pattern (make-pattern-from-bitmap-file dl-name :format (get-type dl-name))))
-            (with-room-for-graphics ()
-              (draw-pattern* stream pattern 0 0))))
+        (let ((pattern (make-pattern-from-bitmap-file dl-name :format (get-type dl-name))))
+          (with-room-for-graphics ()
+            (draw-pattern* stream pattern 0 0)))
       (clim-extensions:unsupported-bitmap-format (e)
         (format stream "Error: ~a~%" e)
         (format stream "You can find the file at: ~a~%" dl-name)
@@ -255,10 +256,11 @@
     (object) (list object))
 
 (define-gopher-command (com-go-html :name t) ((html-file 'html-file))
-  (with-application-frame (frame)
-    (handler-case
-        (trivial-open-browser:open-browser (subseq (cl-gopher:selector html-file) 4))
-      (uiop:subprocess-error (e) nil))))
+  (handler-case
+      (trivial-open-browser:open-browser (subseq (cl-gopher:selector html-file) 4))
+    (uiop:subprocess-error (e)
+      (declare (ignore e))
+      nil)))
 
 (define-presentation-to-command-translator go-html
     (html-file com-go-html gopher
