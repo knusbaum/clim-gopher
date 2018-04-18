@@ -16,9 +16,10 @@
 (defun read-bookmarks (fname)
   (handler-case
       (with-open-file (is fname)
-        (let ((gopher-lines (read is)))
-          (make-instance 'bookmarks
-                         :bookmarks (cl-gopher:gopher-lines-from-alist gopher-lines))))
+        (let ((*read-eval* nil))
+          (let ((gopher-lines (read is)))
+            (make-instance 'bookmarks
+                           :bookmarks (cl-gopher:gopher-lines-from-alist gopher-lines)))))
     (file-error (e)
       (declare (ignore e))
       nil)))
