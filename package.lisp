@@ -6,6 +6,9 @@
 (eval-when (:load-toplevel :compile-toplevel)
   (defparameter *resource-path*
     (directory-namestring
-     (merge-pathnames
-      #P"res/"
-      (load-time-value (or #.*compile-file-pathname* *load-pathname*))))))
+     #+ccl (ccl:full-pathname (merge-pathnames
+                           #P"res/"
+                           #.*compile-file-pathname*))
+     #-ccl (merge-pathnames
+            #P"res/"
+            #.*compile-file-pathname*))))

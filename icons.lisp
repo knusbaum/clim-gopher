@@ -2,7 +2,7 @@
 
 (defvar *icon-cache* (make-hash-table :test #'equal))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel)
   (defun get-type (file)
     (let ((mime (trivial-mimes:mime file)))
       (cond
