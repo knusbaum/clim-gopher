@@ -3,6 +3,8 @@
 (load "~/quicklisp/setup.lisp")
 (ql:setup)
 
+(ql:update-all-dists :prompt nil)
+
 (ql:quickload 'clim-gopher)
 (ql:quickload 'net.didierverna.clon)
 
@@ -25,5 +27,5 @@
         (clim-gopher:browser :url start-url)
         (clim-gopher:browser))))
 
-(save-lisp-and-die "gopher" :toplevel #'main :executable t :compression t :purify t
+(save-lisp-and-die "gopher" :toplevel #'main :executable t :purify t
                    :save-runtime-options t)

@@ -6,7 +6,7 @@
 (defun display-type (line stream)
   (let ((icon (icon-for (cl-gopher:line-type line))))
     (if icon
-        (with-room-for-graphics ()
+        (with-room-for-graphics (stream :first-quadrant nil)
           (draw-design stream icon))
         (format stream "~a" (string-downcase (cl-gopher:line-type line))))))
 
