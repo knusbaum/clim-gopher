@@ -14,18 +14,14 @@
   (defun make-icon-array (filename)
     (let ((dl-name (merge-pathnames *resource-path* filename)))
       (handler-case
-          (read-bitmap-file dl-name :format (get-type dl-name) :port nil)
+          (read-bitmap-file dl-name :format (get-type dl-name))
         (clim-extensions:unsupported-bitmap-format (e)
           (declare (ignore e))
           nil)))))
 
 (defun make-icon-pattern (array)
-  (make-instance 'clim-internals::rgb-pattern
-                 :image (make-instance 'clim-internals::rgb-image
-                                       :width (array-dimension array 1)
-                                       :height (array-dimension array 0)
-                                       :data array)))
-
+  (make-instance 'clim-extensions:image-pattern
+                 :array array))
 
 (defun icon-for (type)
   (case type
